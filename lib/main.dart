@@ -4,11 +4,13 @@ import 'package:state_managment_tutorial/counter_provider.dart';
 import 'package:state_managment_tutorial/home_screen.dart';
 
 void main() {
-  //3- wrapping the whole application to listen to any notifications sent through this very provider.
+  // 1- Wrap the entire app inside a Provider widget (ChangeNotifierProvider).
+  //    This makes CounterProvider available *down the widget tree*.
+  //    Any widget can now access the provider via context (Provider.of / Consumer).
   runApp(
     ChangeNotifierProvider(
-      child: const MyApp(),
-      create: (context) => CounterProvider(),
+      create: (context) => CounterProvider(), // provider is created once at the root
+      child: const MyApp(), // MyApp and all children can listen to CounterProvider
     ),
   );
 }
@@ -18,6 +20,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 2- MaterialApp as the root of the app:
+    //    defines global theme, routes, and sets HomeScreen as the start point.
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
