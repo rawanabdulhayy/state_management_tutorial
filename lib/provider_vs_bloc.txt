@@ -1,0 +1,85 @@
+🟣 Provider vs. Bloc — both use BuildContext
+
+Both provider and flutter_bloc packages extend Flutter’s widget tree idea.
+Both rely on context to "walk up" the tree and fetch a dependency (the ChangeNotifier in Provider or the Bloc in flutter_bloc).
+But the way you use that dependency differs slightly.
+
+🟢 Provider style
+
+Provider.of<T>(context)
+---------------------------------
+Gives you the instance of T that was provided higher in the tree.
+Example:
+
+final counter = Provider.of<CounterProvider>(context);
+
+By default: widget rebuilds whenever notifyListeners() is called.
+
+If you only want to grab it once (without rebuilds):
+Provider.of<CounterProvider>(context, listen: false);
+
+context.watch<T>()
+---------------------------------
+Same as Provider.of<T>(context) with listen: true.
+The widget rebuilds when the provider notifies listeners.
+
+context.read<T>()
+---------------------------------
+Same as Provider.of<T>(context, listen: false).
+You read once but do not rebuild when the provider changes.
+Ideal for event calls (e.g. increment, fetch, reset).
+
+🔵 Bloc style
+
+Bloc adopted the same API (read, watch, select) for consistency, but the pattern is event-driven instead of directly mutating state.
+
+context.read<Bloc>()
+---------------------------------
+Gets the bloc instance without listening.
+Use it when you want to dispatch an event:
+
+context.read<CounterBloc>().add(IncrementCounter());
+
+⚠️ This must be wrapped in a function:
+onPressed: () {
+  context.read<CounterBloc>().add(IncrementCounter());
+}
+
+(because .add() is a side effect, not a value)
+
+context.watch<Bloc>()
+---------------------------------
+Subscribes to bloc state changes, rebuilds widget when state updates.
+Example:
+
+final state = context.watch<CounterBloc>().state;
+
+Useful inside build() for showing the current counter value.
+
+BlocProvider.of<Bloc>(context)
+---------------------------------
+Older equivalent of context.read<Bloc>().
+Still works, but read/watch is the modern, shorter syntax.
+
+⚡ Mental model
+
+Provider: you directly read and mutate state (counter++) then notify.
+Bloc: you send events (add(IncrementCounter())), bloc reacts, emits a new state.
+
+So:
+- watch → subscribe & rebuild on change.
+- read → fetch once, no rebuilds.
+- .add(Event) (Bloc only) → trigger logic in bloc.
+
+✅ Example combining both:
+
+// UI listens to changes
+Text('${context.watch<CounterBloc>().state}'),
+
+// Button sends an event
+FloatingActionButton(
+  onPressed: () {
+    context.read<CounterBloc>().add(IncrementCounter());
+  },
+  child: Icon(Icons.add),
+),
